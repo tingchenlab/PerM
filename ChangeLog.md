@@ -1,0 +1,43 @@
+## PerM Changelog ##
+
+**Version 0.3.6.0**
+
+  * Fixed an error in reading reference sequences when lowercase 'n' instead of uppercase was used for an unknown base. Closes Issue [46](http://code.google.com/p/perm/issues/detail?id=46).
+
+**Version 0.3.5.0**
+
+  * Increased maximum number of alignments per read (-k switch) from 2,000 to 1,000,000. Default remains 200. Closes Issue [42](http://code.google.com/p/perm/issues/detail?id=42).
+
+  * Closed Issue [43](http://code.google.com/p/perm/issues/detail?id=43).
+
+  * Added new --includeReadsWN switch to refine handling of reads with Ns. Previously the only options were to exclude reads with Ns or to arbitrarily substitute A for the unknown nucleotide. The new switch allows the substitution to be limited to only reads with up to a specified number of unknown bases; reads with a higher number of bases are discarded. Closes Issue [44](http://code.google.com/p/perm/issues/detail?id=44).
+
+**Version 0.3.3.0**
+
+  * Allow mapping to shorter reads with F1 and F2 seed. Low limit for F1 seed is now 15-bp and 20-bp reads for the F1 and F2 seed respectively. Note: mapping to such short reads can be slow. Closes Issue [40](http://code.google.com/p/perm/issues/detail?id=40).
+
+  * -m -s $dir now saves index in the assigned directory with the default index name. Previously -s $dir caused a segmentation fault. Closes Issue [41](http://code.google.com/p/perm/issues/detail?id=41).
+
+  * Cleaned up some messages. Closes Issue [37](http://code.google.com/p/perm/issues/detail?id=37).
+
+**Version 0.3.2.0**
+
+  * Changed definition of **-k** parameter to mean alignments will not be output if there are more than # alignments rather than # or more alignments. The current definition is the same as the meaning of the **-k** switch in Bowtie. To convert from using an older version of PerM, change -k # to -k #-1, e.g. **-k 5** to **-k 4**.
+
+  * Fixed a segmentation fault that occurred when **-k 1** or **-k 2** was used with the **-a** switch. Closes Issue [39](http://code.google.com/p/perm/issues/detail?id=39).
+
+  * The default read file names 'F3' and '[R3](https://code.google.com/p/perm/source/detail?r=3); are changed to 'F'; and 'R', meaning forward and reverse, in order to avoid confusion of with seed F3.
+
+**Version 0.3.1.0**
+
+  * Fixed bug introduced in PerM 0.3.0.0 where reference sequence was not reverse complemented in .mapping output if read file was in FASTA format.
+
+**Version 0.2.9.9**
+
+  * Alignments for reads mapped to more positions than the threshold set by the **-k** switch (default 200) are no longer included in the mapping output. The new **-a** _filename_ option can be used to collect such reads. Previously, the first 200 (or **-k** specified) alignments were output to the mapping file.
+
+  * Fixed issue with reads longer than 64 bp. Last base was ignored for reads with an odd number of bases. Closes Issue [35](http://code.google.com/p/perm/issues/detail?id=35).
+
+**Version 0.2.9.7**
+
+  * 6 mismatches limit for SOLID reads removed. Closes Issue [34](http://code.google.com/p/perm/issues/detail?id=34).

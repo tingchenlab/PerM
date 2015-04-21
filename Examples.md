@@ -1,0 +1,38 @@
+# Single End Mapping Examples #
+
+#### ./PerM ref.fasta reads.fasta -v 5 -o out.mapping ####
+  * PerM maps reads in `reads.fasta` to the reference sequence(s) in `ref.fasta`
+  * PerM will output alignments with up to five mismatches `-v 5`; however the default [seed](http://code.google.com/p/perm/wiki/Algorithms) chosen according to the read length, is only fully sensitive to two or three mismatches.
+  * PerM will first check if the index has previously been saved in the default path. If so, it will use it; otherwise it will build it. It won't save the index in disk.
+  * PerM outputs to the file `out.mapping` in the [mapping](http://code.google.com/p/perm/wiki/Output) tab delimited text format.
+
+#### ./PerM hg18.txt reads.txt -v 5 -E -u missed.fa ####
+  * `hg18.txt` should be a file listing each reference FASTA filename, one per line.
+  * `reads.txt` should be a file listing each file of reads, one per line. [more details](http://code.google.com/p/perm/wiki/Input).
+  * If your computer supports [OpenMP](http://openmp.org/wp/), PerM assigns one CPU per file of reads in the list and maps them in parallel, sharing a single in memory index among all process threads.
+  * With the `-E` flag, PerM will exclude the ambiguous mapping and output only the unique mapping, in term of number of mismatches.
+  * PerM will allows five mismatches `-v 5` and output the unmapped reads to file `missed.fa`
+
+#### ./PerM ref.fasta reads.csfasta -v 5 -m -s my.index --delimiter ',' --seed F4 ####
+  * PerM guesses the read format as _SOLiD_ read format, according to the file's extension.
+  * One can also use the [--readFormat](http://code.google.com/p/perm/wiki/Manual) option to specify the format.
+  * With `-m -s my.index`, PerM builds and saves the index file `my.index`.
+  * It uses comma as the delimiter to extract the read Id in the "header line" in the csfasta file.
+  * With `--seed F4`, PerM uses the seed which is fully sensitive to four mismatches to build the index. Using the F4 seed could be significantly slower than the F3 or S<sub>1,1</sub> seed.
+
+#### ./PerM my.index reads.csfasta -v 5 -o out.sam ####
+  * PerM reads in the saved index `my.index` and does the mapping.
+  * The output will be in [SAM](http://samtools.sourceforge.net/) format, as determined by the file extension (.sam) of the output file.
+
+
+# Paired End Example #
+
+#### ./PerM -1 F3.fq -2 R3.fq -L 200 -U 500 -e -A -v 5 -m -s -o out.sam ####
+
+  * Only paired mapping with separation distance of 200-500 bp will be output (-L and -U switches).
+  * Read pairs with multiple qualified mapping locations won't be output (-e switch)
+  * For each end, try all mapping locations within 5 mismatches (-v switch).
+  * PerM will build the index (even if it already exists, -m flag) and save it (-s flag) to the default path for future mappings.
+  * PerM will output the mappings file to out.sam in the SAM format.
+
+[Back to manual](http://code.google.com/p/perm/wiki/Manual)

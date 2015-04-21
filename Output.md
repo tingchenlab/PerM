@@ -1,0 +1,118 @@
+## Mapping Summary ##
+The mapping results summary is written to stdout. The summary includes the number of reads mapped with each number of mismatches and the running time of each step. For example:
+
+> ./myreads.fasta, Reads:, Filtered#, 0, Kept#, 23556, Mapped#, 1309, Multimapped#, 1195, Multimapped>199#, 328
+
+> ./myreads.fasta, Sub0, 294, Sub1, 597, Sub2, 239, Sub3, 179,
+
+Here 1309 reads were mapped (1195 to multiple locations) and mappings for 328 reads were not reported because the exceeded the maximum number of mappings per read. The second line indicates that 294 reads matched the reference perfectly (zero substitutions), 597 reads had one mismatch, etc.
+
+When multiple reads sets are processed, a summary is written for each read set. Use " | tee mapping.log" to get the summary and "grep" for the statistics.
+For example:
+
+> ` cat stats.txt | tr '\r' '\n' | grep 'Sub' `
+
+> ` cat stats.txt | tr '\r' '\n' | grep 'Read#' `
+
+You can also use the script
+[PerMStat.sh](http://perm.googlecode.com/files/PerMStat.sh) to get mapping statistics for multiple mapping read sets.
+
+## Mapping Results ##
+
+The mapping output is written in either the [SAM format](http://samtools.sourceforge.net/SAM1.pdf) or a tab delimited text format.
+
+### SAM Format ###
+PerM will write the mapping output output in the SAM format if explicitly requested or if the extension of the output filename is .sam.
+
+  * `--outputFormat sam`
+  * `-o <outputFile>.sam`
+
+You can use [samtools](http://samtools.sourceforge.net/) to do downstream analysis, for example pileup reads, get the consensus seq or get expression level. Check my samtools wrappers that can get the expression levels for RNA-seq, described in the [example](http://code.google.com/p/perm/wiki/SamExample) page. You can also use [Galaxy](http://test.g2.bx.psu.edu/) with webpage GUI. The [samtools](http://samtools.sourceforge.net/)' [wikipage](http://sourceforge.net/apps/mediawiki/samtools/index.php?title=SAM_protocol#C_APIs_.28SAMtools-C.29) may also have some information you need.
+
+The GUI tool [Tablet](http://bioinf.scri.ac.uk/tablet/) can be used to visualize the **sorted** sam output.
+
+### PerM's Mapping Format ###
+In many cases, the SAM format is less convenient than a simple tab delimited format. The original mapping format is tab delimited and written to files with the **.mapping** file extension.
+
+#### For single-end reads ####
+Each line represents a single mapping with the following fields:
+
+  * Read Id (extracted from header line of the input read file. If the Id is missing, for example when the read file consists of raw sequences without FASTA headers, a numeric tag will automatically be generated for each read.)
+  * The read sequence. For SOLiD reads, the first base from the agent (not in the reference) is not included. The first color signal is translated into a base for display.
+  * Reference sequence ID (begins at 0 and numbered according to the order in the reference list)
+  * 0-based offset into the forward reference strand where leftmost character of the alignment occurs, i.e. 5' location of read along the reference strand if mapped to the forward strand or 3' location of read along the reference strand if mapped to the reverse strand.
+  * The mapped reference sequence region, reversed-complemented if the read maps to the reverse strand. Thus, this column will always be the same as the read sequence for perfect matches regardless of which strand the read maps to. For SOLiD reads, this region is translated into colors for comparison to the read.
+  * Positive (forward) or negative (backward) strand that the reads mapped to.
+  * Number of mismatches or the mismatches score (the sum of quality scores in the mis-matched bases) if available.
+  * Number of mappings that this read aligns to, including the current one.
+  * Reads qualities, numbers printed in characters with a Illumina Quality score shift. An asterisk indicate there were are no quality scores, e.g. when the input is a FASTA file.
+
+To grep the uniquely mapped read, use `grep -P '\t1\t[!\t]*\t$' [result].mapping `. This will extract the lines where the second to last column is 1.
+
+For Illumina reads with quality scores (FASTAQ file), Windows users can use the tool [MapView](http://evolution.sysu.edu.cn/mapview/) to visualize the single-end result with the [configure file](http://perm.googlecode.com/files/MVFmaker_NewFormat.txt).
+
+#### For paired-end reads ####
+
+  * Read Id (extracted from header line of the input read file. If the Id is missing, for example when the read file consists of raw sequences without FASTA headers, a numeric tag will automatically be generated for each read.)
+  * The 1st read sequence. 5' to 3'.
+  * The 2nd read sequence. 5' to 3'.
+  * The quality score sequence of the first end, if available. (No this column if quality score is not available)
+  * The quality score sequence of the second end, if available. (No this column if quality score is not available)
+  * The 1st read mismatches score (or number of mismatches when score not available.)
+  * The 2nd read mismatches score (or number of mismatches when score not available.)
+  * The total mismatch scores or number of mismatches.
+  * The ref name of the the 1st read mapped to.
+  * The ref name of the the 2nd read mapped to.
+  * The position of the the 1st read mapped to.
+  * The position of the the 2nd read mapped to.
+  * The foward (+) or backward (-)strand that the 1st read mapped to.
+  * The foward (+) or backward (-)strand that the 2nd read mapped to.
+  * The # of qualified paired location that the paired reads mapped to.
+
+One can use option **--printRefSeq** to print out the mapped paired reference sequence for Illumina paired reads as the extra two columns.
+  * The reference sequence mapped by the first end.
+  * The reference sequence mapped by the second end.
+
+> <a href='Hidden comment: 
+# Category. This is the flag defined by ABI, which is a three letter alphabet.
+# see [http://www3.appliedbiosystems.com/cms/groups/mcb_marketing/documents/generaldocuments/cms_058718.pdf Here 2.2.9 c] to get detail info.
+'></a>
+## Unmapped reads ##
+
+When the **-u** flag is specified, PerM will output the unmapped reads. The format is FASTA or FASTQ, depending on whether the quality score is available. I need to add the .csfasta format in the near future. Note the paired-end mapping result of the SAM format includes the mapped single-end.
+
+## Reads with excessive alignments ##
+
+When the **-a** flag is specified, PerM will output the reads which map to too many locations where the maximum number of allowed location is defined by the **-k** switch or the default of 200. The format is FASTA or FASTQ, depending on whether the quality score is available.
+
+## Automatic file naming for multiple read sets ##
+
+When multiple read sets are processed simultaneously, for example to take advantage of multiple CPUs (cores), the output filenames will be automatically generated based on the name of the corresponding read file and index file. The mapping files will be named as follows:
+
+> `<idxbase>_<mode>_<Seed1>_<#mm>_<readfile>.mapping`
+
+where `<idxbase>` is the base name of the sequence file used to generate the index, `<Seed1>` is the seed name stripped of the first character, e.g. 2 for F2, `<#mm>` is the number of mismatches allowed (via the **-v** switch or according to the default), and `<readfile>` is the base name of the file for the read set. `<mode>` is either A (all), B (best), or E (unique only) according to the **-A**, **-B**, and **-E** switches. For example, if `myreads_14.fasta` is processed using the index `64_2_Illumina_myref_v2.index` via `--seed F2` and using the `-v 3` switch without specifying either **-A**, **-B**, or **-E**, the corresponding output file will be named:
+
+> `myref_B_2_3_myreads_14.mapping`
+
+The output directory of the mapping files can be set with the **-d** option.
+
+If the **-u** option is specified, the files of unmapped reads will automatically be named as follows:
+
+> `myreads_14_miss_myref.fasta`
+
+If the **-a** option is specified, the files of reads that mapped to too many locations will automatically be named as follows:
+
+> `myreads_14_ambig_myref.fasta`
+
+These files will be written in the same directory as the input **.txt** containing the sequence filenames.
+
+## Index file ##
+
+From version 0.1.8, PerM's index format has changed to include reference sequence in binary format. Users can specify the index filename, but must use the **.index** file extension. The default index name has the format
+
+> `<ReadLength>_<Seed1>_<ReadType>_<RefFileName>_<Version>.index`
+
+where `<Seed1>` is the seed name stripped of the first character, e.g. 2 for F2, `<RefFileName>` is the reference file stripped of its file extension, and `<Version>` is the internal index format version, currently v2.
+
+[Back to manual](http://code.google.com/p/perm/wiki/Manual)

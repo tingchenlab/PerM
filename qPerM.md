@@ -1,0 +1,4 @@
+qPerM is shell script wrapper for PerM which splits the reads into multiple files, maps them in parallel with multiple CPUs (cores) and then combines the results together, preserving the original order of the reads in the mapping output. PerM has shown excellent parallel performance on as many as 48 cores.
+
+[Download qPerM](http://code.google.com/p/perm/downloads/detail?name=qPerM.zip) and try it. Before running qPerM, make sure PerM is on in your search path, i.e. the PATH environment variable.
+If you have any questions, please email tade dot souaiaia at gmail dot com.

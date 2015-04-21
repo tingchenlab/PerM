@@ -1,0 +1,58 @@
+PerM takes (1) The reference sequence(s) and (2) The reads as the input files.
+
+## Reference Files ##
+PerM takes single or multiple FASTA files as the reference. The file should have a corresponding file extension, such as **.fasta** or **.fa**. Each FASTA file may contain multiple sequences. The first word after ">" on the FASTA header line will be used as the "Sequence Name" to be shown in the alignment output. Typical sequence names identify gene transcripts or contigs. Pipeline operations may wish to use the GenBank GI identifier, a unique numeric id for each sequence in GenBank.
+
+For example, in reads.fa:
+```
+>gene1 
+ACGTACGTACGTACGTACGTACGTACGTACGT
+>gene2 
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+...
+>geneN
+GGGGAAAATTTAGCGGGGGAAAATTTAGCGGGGGA
+AAATTTAGCG...
+```
+"gene1", "gene2", etc (without the quotes) will be the Id for the reference sequence and be written in the mapping result.
+
+To process multiple FASTA files, create a list of the FASTA filenames in file with the **.txt** file extension, ex: `HumanGenome.txt`, with one file path per line. For example:
+```
+/data/chr1.fa
+/data/chr2.fa
+...
+/data/chrY.fa
+```
+Each file, ex /data/chr1.fa can have one or multiple sequences.
+
+#### Non-ACGT characters ####
+Only ACGT and N are allowed in the reference file. Degenerate nucleotide symbols (R, Y, M, K, S, W, B, D, H, V) and Uracil (U) are changed to "N" before creating the index.
+
+Internally, PerM concatenates all the references sequence and separates them by "N" so that reads will never be aligned across multiple reference sequences in a single alignment record.
+
+#### Index file ####
+Use the `-s`, `-s /some/directory`, or `-s /path/to/your/filename.index ` option to save the preprocessed reference as a binary index file to speed up future processing. If an index name is not specified as in the first two cases, the default index file name is used. The default index name is `<read_length>_<seed1>_<Read type>_<RefName>_v2.index`, where `<seed1>` is the seed stripped of the leading character, e.g. 2 instead of F2, and v2 indicates the version of the internal format of the index. The `-m` causes the index to be rebuilt even if an existing index file is available.
+
+Note: OS limitations may limit the maximum length of a file name or file path.
+
+## Read Files ##
+PerM expects reads from either the SOLiD or Solexa sequencer. PerM guesses the read file format according to the first read file's extension, ex: .fasta, .fastq, .csfasta, .csfastq. Or the format can be specified explicitly via `--readFormat fasta`, `--readFormat fastq`, `--readFormat csfasta`, or `--readFormat csfastq` when the input files have a non-standard extension. The read length is automatically detected for the first read. The reads file format and the read length are assumed to be the same for all read files and all reads. When a read is longer than the length of the first read, PerM truncates the read into the expected length. When a read is shorter than the length of the first reads, the reads will be ignored. In version 4.0, a warning message will be shown for a shorter read. Users can use a newly added option -b, to extract reads shorter than expected. Alternatively, a bash command similar to
+"grep -B 1 -A 2 '^[ACGTacgt](ACGTacgt.md)\{50\}$' input.fastq > read50.fastq" can also help users easily extract read with length 50 from a fastq file with reads in multiple lengths.
+
+#### SOLiD read quality ####
+For SOLiD reads in csfasta format, PerM will try to read the file with the same basename as the read set with the corresponding ".qual" extension for the quality scores. That is, if the read file name is **7B.csfasta**, its quality file **7B.qual** should be put in the same directory. If quality score file is not available, or the reads and quality scores can't be matched, only the read sequences will be used.
+(Tips! Use our shell script [splitReads.sh](http://code.google.com/p/perm/downloads/detail?name=splitReads.sh&can=2&q=#makechanges) to split a FASTA or CSFASTA file into one million reads per set. It will generate a list file. Use the list file name as the input ptr of PerM. To keep the mapping statistics and error messages, redirect the standard output to a log file, ` ex: PerM Ref.fa Reads.csfasta -v 3 | tee my.log `.
+If you map multiple reads sets in the same time, you can use the [PerMStats.sh](http://perm.googlecode.com/files/PerMStat.sh) script to extract mapping counts for your convenience.
+)
+
+#### Paired-end reads ####
+PerM accepts two formats for paired end reads.
+(1) Concatenated 5'-3' end 3'-5' FASTA file.
+(2) Two separate files with `_F3` and `_R3` suffixes for forward and reverse ends respectively. Each corresponding line is paired.
+For input format (1), each file name should be listed in a row as single-end read file.
+For input format (2), the two paired files can be specified in a list, with each row having two files path, separated by tab. Ex: reads\_F3.csfasta \t reads\_R3.csfasta.
+Or, specified with the command line for a paired read files:
+
+`./PerM <reference or index path> -1 <forward reads path> -2 <reverse reads path> [-flag options] `
+
+[Back to manual](http://code.google.com/p/perm/wiki/Manual)
